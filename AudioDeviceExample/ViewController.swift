@@ -14,7 +14,7 @@ class ViewController: UIViewController {
 
     // Configure access token manually for testing, if desired! Create one manually in the console
     // at https://www.twilio.com/console/video/runtime/testing-tools
-    var accessToken = "TWILIO_ACCESS_TOKEN"
+    var accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImN0eSI6InR3aWxpby1mcGE7dj0xIn0.eyJqdGkiOiJTSzY4NTE2YjdhMDk1MDBmOTYxNWI5MmQ5MjBlMzRlMWE4LTE1MjA1MDEwMDAiLCJncmFudHMiOnsiaWRlbnRpdHkiOiJjamVhNm9hcnNoNGZiMDE0OTk3c3VlM2ZtIiwidmlkZW8iOnsicm9vbSI6ImNqZWd3ZzVwcGw0MzcwMTQ5bTJwMW45cjEifX0sImlhdCI6MTUyMDUwMTAwMCwiZXhwIjoxNTIwNTA0NjAwLCJpc3MiOiJTSzY4NTE2YjdhMDk1MDBmOTYxNWI5MmQ5MjBlMzRlMWE4Iiwic3ViIjoiQUM2OGIxMDI3OGRmZGM5MmNkMTc2YmY1ODhiNzVlZjM1ZSJ9.1ubbWn0Yrd9eKhPp2pdRaOujK4kS-JocUCWsEX3f5go"
 
     // Configure remote URL to fetch token from
     let tokenUrl = "http://localhost:8000/token.php"
@@ -31,13 +31,17 @@ class ViewController: UIViewController {
     @IBOutlet weak var audioDeviceButton: UIButton!
     @IBOutlet weak var connectButton: UIButton!
     @IBOutlet weak var disconnectButton: UIButton!
+    @IBOutlet weak var playButton: UIButton!
     @IBOutlet weak var musicButton: UIButton!
     @IBOutlet weak var messageLabel: UILabel!
     @IBOutlet weak var remoteViewStack: UIStackView!
     @IBOutlet weak var roomTextField: UITextField!
     @IBOutlet weak var roomLine: UIView!
     @IBOutlet weak var roomLabel: UILabel!
-
+    @IBOutlet weak var videoPlayerView: UIView!
+    
+    var videoPlayer:AVPlayer?
+  
     var messageTimer: Timer!
 
     let kPreviewPadding = CGFloat(10)
@@ -53,12 +57,25 @@ class ViewController: UIViewController {
         title = "AudioDevice Example"
         disconnectButton.isHidden = true
         musicButton.isHidden = true
+        playButton.isHidden = true
+        videoPlayerView.isHidden = true
         disconnectButton.setTitleColor(UIColor.init(white: 0.75, alpha: 1), for: .disabled)
         connectButton.setTitleColor(UIColor.init(white: 0.75, alpha: 1), for: .disabled)
+        playButton.setTitleColor(UIColor.init(white: 0.75, alpha: 1), for: .disabled)
         roomTextField.autocapitalizationType = .none
         roomTextField.delegate = self
         logMessage(messageText: ViewController.coreAudioDeviceText + " Device selected")
         audioDeviceButton.setTitle("CoreAudio Device", for: .normal)
+        
+        guard let videoURL = URL(string: "https://s3-us-west-1.amazonaws.com/avplayervideo/What+Is+Cloud+Communications.mov")
+            else { return }
+        
+        videoPlayer = AVPlayer(url: videoURL)
+        
+        let playerLayer=AVPlayerLayer(player: videoPlayer!)
+        playerLayer.frame = videoPlayerView.bounds
+        videoPlayerView.layer.addSublayer(playerLayer)
+        
     }
 
     override func didReceiveMemoryWarning() {
@@ -173,7 +190,7 @@ class ViewController: UIViewController {
 
             // The name of the Room where the Client will attempt to connect to. Please note that if you pass an empty
             // Room `name`, the Client will create one for you. You can get the name or sid from any connected Room.
-            builder.roomName = self.roomTextField.text
+            builder.roomName = "cjegwg5ppl4370149m2p1n9r1"
         }
 
         // Connect to the Room using the options we provided.
@@ -201,6 +218,21 @@ class ViewController: UIViewController {
             }
         }
     }
+    
+    @IBAction func playVideo(_ sender: Any) {
+        guard let videoPlayer = videoPlayer
+            else { return }
+        
+        if videoPlayer.rate == 0
+        {
+            videoPlayer.play()
+            playButton.setTitle("Pause", for: UIControlState.normal)
+        } else {
+            videoPlayer.pause()
+            playButton.setTitle("Play", for: UIControlState.normal)
+        }
+    }
+    
 
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
@@ -247,6 +279,9 @@ class ViewController: UIViewController {
         self.roomLabel.isHidden = inRoom
         self.disconnectButton.isHidden = !inRoom
         self.disconnectButton.isEnabled = inRoom
+        self.playButton.isHidden = !inRoom
+        self.playButton.isEnabled = inRoom
+        self.videoPlayerView.isHidden = !inRoom
         UIApplication.shared.isIdleTimerDisabled = inRoom
 
         if #available(iOS 11.0, *) {
